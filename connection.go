@@ -19,8 +19,9 @@ import (
 // Main connection against ESL - Gotta add more description here
 type SocketConnection struct {
 	net.Conn
-	err chan error
-	m   chan *Message
+	err   chan error
+	m     chan *Message
+	close chan bool
 }
 
 // Dial - Will establish timedout dial against specified address. In this case, it will be freeswitch server
@@ -140,31 +141,31 @@ func (c *SocketConnection) ReadMessage() (*Message, error) {
 
 // Handle - Will handle new messages and close connection when there are no messages left to process
 func (c *SocketConnection) Handle() {
-
-	done := make(chan bool)
-
-	go func() {
-		for {
+loop:
+	for {
+		select {
+		case <-c.close:
+			break loop
+		default:
 			msg, err := newMessage(bufio.NewReaderSize(c, ReadBufferSize), true)
+			go func() {
+				if err != nil {
+					c.err <- err
+				}
 
-			if err != nil {
-				c.err <- err
-				done <- true
-				break
-			}
-
-			c.m <- msg
+				if msg != nil {
+					c.m <- msg
+				}
+			}()
 		}
-	}()
-
-	<-done
-
-	// Closing the connection now as there's nothing left to do ...
-	c.Close()
+	}
 }
 
 // Close - Will close down net connection and return error if error happen
 func (c *SocketConnection) Close() error {
+	c.close <- true
+	defer close(c.close)
+
 	if err := c.Conn.Close(); err != nil {
 		return err
 	}

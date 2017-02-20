@@ -109,16 +109,16 @@ func (m *Message) Parse() error {
 		for k, v := range cmr {
 			Debug("Message (header: %s) -> (value: %v)", k, v)
 		}
-	case "command/reply":
-		reply := cmr.Get("Reply-Text")
+	// case "command/reply":
+	// 	reply := cmr.Get("Reply-Text")
 
-		if strings.Contains(reply, "-ERR") {
-			return fmt.Errorf(EUnsuccessfulReply, reply[5:])
-		}
-	case "api/response":
-		if strings.Contains(string(m.Body), "-ERR") {
-			return fmt.Errorf(EUnsuccessfulReply, string(m.Body)[5:])
-		}
+	// 	if strings.Contains(reply, "-ERR") {
+	// 		return fmt.Errorf(EUnsuccessfulReply, reply[5:])
+	// 	}
+	// case "api/response":
+	// 	if strings.Contains(string(m.Body), "-ERR") {
+	// 		return fmt.Errorf(EUnsuccessfulReply, string(m.Body)[5:])
+	// 	}
 	case "text/event-json":
 		// OK, what is missing here is a way to interpret other JSON types - it expects string only (understandably
 		// because the FS events are generally "string: string") - extract into empty interface and migrate only strings.
