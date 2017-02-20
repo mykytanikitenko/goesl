@@ -141,22 +141,22 @@ func (c *SocketConnection) ReadMessage() (*Message, error) {
 
 // Handle - Will handle new messages and close connection when there are no messages left to process
 func (c *SocketConnection) Handle() {
-loop:
+	defer c.Close()
+
 	for {
 		select {
 		case <-c.close:
-			break loop
+			return
 		default:
 			msg, err := newMessage(bufio.NewReaderSize(c, ReadBufferSize), true)
-			go func() {
-				if err != nil {
-					c.err <- err
-				}
+			if err != nil {
+				c.err <- err
+				return
+			}
 
-				if msg != nil {
-					c.m <- msg
-				}
-			}()
+			if msg != nil {
+				c.m <- msg
+			}
 		}
 	}
 }
